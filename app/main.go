@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/caarlos0/env/v11"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -14,13 +15,25 @@ import (
 
 import _ "social-network/app/docs"
 
-// http-swagger middleware
+type config struct {
+	// App
+	Port int `env:"PORT"`
+
+	// Mongo
+	MongoInitDBRootUsername string `env:"MONGO_INITDB_ROOT_USERNAME"`
+	MongoInitDBRootPassword string `env:"MONGO_INITDB_ROOT_PASSWORD"`
+	MongoPort               int    `env:"MONGO_PORT"`
+	MongoHost               string `env:"MONGO_HOST"`
+}
 
 var mongoClient *mongo.Client
 
+var (
+	mongoURL string
+	port     int
+)
+
 const (
-	mongoURL                    = "mongodb://user:pass@localhost:27017"
-	port                        = 8085
 	dbName                      = "social-network"
 	postsCollectionName         = "posts"
 	usersCollectionName         = "users"
@@ -30,8 +43,20 @@ const (
 // @title API of social-network test project
 // @version 1.0
 func main() {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	log.Println("Starting the application...")
+
+	cfg := config{}
+	if err := env.Parse(&cfg); err != nil {
+		log.Printf("%+v\n", err)
+	}
+
+	port = cfg.Port
+	mongoURL = fmt.Sprintf("mongodb://%s:%s@%s:%d", cfg.MongoInitDBRootUsername, "***", cfg.MongoHost, cfg.MongoPort)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+
+	log.Printf(">>> Connecting ro Mongo: %s ...\n", mongoURL)
 
 	clientOptions := options.Client().ApplyURI(mongoURL)
 
@@ -42,7 +67,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Println(">>> Connected to mongodb")
+	log.Println(">>> Connecting to mongodb: DONE")
 
 	http.HandleFunc("/swagger/*", methodHandler(http.MethodGet, httpSwagger.Handler(
 		httpSwagger.URL(fmt.Sprintf("http://localhost:%d/swagger/doc.json", port)), //The url pointing to API definition

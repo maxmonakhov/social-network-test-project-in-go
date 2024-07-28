@@ -10,6 +10,4 @@ COPY . .
 
 RUN go build -o ./bin/social-network ./app
 
-EXPOSE 8085
-
 CMD ["./bin/social-network"]
