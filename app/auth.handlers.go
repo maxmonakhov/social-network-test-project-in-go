@@ -9,7 +9,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"log"
 	"net/http"
 	"time"
 )
@@ -42,6 +41,13 @@ func (s session) isExpired() bool {
 	return s.expiry.Before(time.Now())
 }
 
+// SignInHandler godoc
+// @Summary      Sign in
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        request   body      main.Credentials  true  "Sign in credentials"
+// @Router       /sign-in [post]
 func SignInHandler(w http.ResponseWriter, r *http.Request) {
 	var credentials Credentials
 	err := json.NewDecoder(r.Body).Decode(&credentials)
@@ -54,7 +60,8 @@ func SignInHandler(w http.ResponseWriter, r *http.Request) {
 
 	user, err := getUserByName(collection, credentials.Username)
 	if err != nil {
-		log.Fatal(err)
+		http.Error(w, "Invalid username or password", http.StatusUnauthorized)
+		return
 	}
 
 	if user == nil || user.Password != credentials.Password {

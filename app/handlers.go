@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"slices"
 	"strings"
+	"time"
 )
 
 type CreteProfileRequestBody struct {
@@ -25,10 +26,17 @@ type UpdateProfileRequestBody struct {
 }
 
 type CreatePostRequestBody struct {
-	Content string             `json:"content"`
-	Author  primitive.ObjectID `json:"author"`
+	Content string `json:"content"`
 }
 
+// CreateProfileHandler godoc
+// @Summary      Create profile
+// @Tags         profile
+// @Accept       json
+// @Produce      json
+// @Param        request   body      main.CreteProfileRequestBody  true  "Create profile data"
+// @Success      200  {object}  main.User
+// @Router       /profile [post]
 func CreateProfileHandler(w http.ResponseWriter, r *http.Request) {
 	var createUserProfileData CreteProfileRequestBody
 	err := json.NewDecoder(r.Body).Decode(&createUserProfileData)
@@ -65,10 +73,32 @@ func CreateProfileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	sessionToken, _ := generateSessionToken()
+	expiresAt := time.Now().Add(60 * 60 * 10 * time.Second)
+
+	sessions[sessionToken] = session{
+		username: user.Name,
+		userId:   user.ID,
+		expiry:   expiresAt,
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:    cookieSessionName,
+		Value:   sessionToken,
+		Expires: expiresAt,
+	})
+
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte("Account created successfully"))
 }
 
+// GetProfileHandler godoc
+// @Summary      Get my profile
+// @Tags         profile
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  main.User
+// @Router       /profile [get]
 func GetProfileHandler(w http.ResponseWriter, r *http.Request) {
 	userContextData := r.Context().Value(userContextKey).(*UserContextData)
 	if userContextData == nil {
@@ -91,6 +121,14 @@ func GetProfileHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(user)
 }
 
+// UpdateProfileHandler godoc
+// @Summary      Update my profile
+// @Tags         profile
+// @Accept       json
+// @Produce      json
+// @Param        request   body      main.UpdateProfileRequestBody  true  "Update profile data"
+// @Success      200  {object}  main.User
+// @Router       /profile [patch]
 func UpdateProfileHandler(w http.ResponseWriter, r *http.Request) {
 	userContextData := r.Context().Value(userContextKey).(*UserContextData)
 	if userContextData == nil {
@@ -136,6 +174,14 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Profile updated successfully"))
 }
 
+// CreatePostHandler godoc
+// @Summary      Create post
+// @Tags         posts
+// @Accept       json
+// @Produce      json
+// @Param        request   body      main.CreatePostRequestBody  true  "Create post data"
+// @Success      200  {object}  main.Post
+// @Router       /posts [post]
 func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 	userContextData := r.Context().Value(userContextKey).(*UserContextData)
 	if userContextData == nil {
@@ -179,6 +225,13 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(post)
 }
 
+// GetMyPostsHandler godoc
+// @Summary      Get my posts
+// @Tags         posts
+// @Accept       json
+// @Produce      json
+// @Success      200  {array}  main.Post
+// @Router       /posts [get]
 func GetMyPostsHandler(w http.ResponseWriter, r *http.Request) {
 	userContextData := r.Context().Value(userContextKey).(*UserContextData)
 	if userContextData == nil {
@@ -214,6 +267,13 @@ func GetMyPostsHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(posts)
 }
 
+// GetLikedPostsHandler godoc
+// @Summary      Get posts that I've liked
+// @Tags         posts
+// @Accept       json
+// @Produce      json
+// @Success      200  {array}  main.Post
+// @Router       /posts/liked [get]
 func GetLikedPostsHandler(w http.ResponseWriter, r *http.Request) {
 	userContextData := r.Context().Value(userContextKey).(*UserContextData)
 	if userContextData == nil {
@@ -265,6 +325,14 @@ func GetLikedPostsHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(posts)
 }
 
+// LikePostHandler godoc
+// @Summary      Like post
+// @Tags         posts
+// @Accept       json
+// @Produce      json
+// @Param     id   path      string  true  "ID of post to like"
+// @Success      200  {object}  main.Post
+// @Router       /posts/{id}/like [post]
 func LikePostHandler(w http.ResponseWriter, r *http.Request) {
 	urlPath := strings.TrimPrefix(r.URL.Path, "/posts/")
 	urlPath = strings.TrimSuffix(urlPath, "/like")
@@ -337,6 +405,13 @@ func LikePostHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(notification)
 }
 
+// GetNotificationsHandler godoc
+// @Summary      Get notifications
+// @Tags         notifications
+// @Accept       json
+// @Produce      json
+// @Success      200  {array}  main.Notification
+// @Router       /notifications [get]
 func GetNotificationsHandler(w http.ResponseWriter, r *http.Request) {
 	userContextData := r.Context().Value(userContextKey).(*UserContextData)
 	if userContextData == nil {

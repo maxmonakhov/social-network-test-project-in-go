@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	httpSwagger "github.com/swaggo/http-swagger"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
@@ -10,6 +11,10 @@ import (
 	"strings"
 	"time"
 )
+
+import _ "social-network/app/docs"
+
+// http-swagger middleware
 
 var mongoClient *mongo.Client
 
@@ -22,17 +27,8 @@ const (
 	notificationsCollectionName = "notifications"
 )
 
-func methodHandler(method string, handler http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != method {
-			http.Error(w, fmt.Sprintf("Method not allowed. Method: %s Path: %s", r.Method, r.URL.Path), http.StatusMethodNotAllowed)
-			return
-		}
-		handler(w, r)
-	}
-
-}
-
+// @title API of social-network test project
+// @version 1.0
 func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -47,6 +43,10 @@ func main() {
 	}
 
 	log.Println(">>> Connected to mongodb")
+
+	http.HandleFunc("/swagger/*", methodHandler(http.MethodGet, httpSwagger.Handler(
+		httpSwagger.URL(fmt.Sprintf("http://localhost:%d/swagger/doc.json", port)), //The url pointing to API definition
+	)))
 
 	http.HandleFunc("/sign-in", methodHandler(http.MethodPost, SignInHandler))
 	http.HandleFunc("/logout", methodHandler(http.MethodPost, LogoutHandler))
@@ -89,5 +89,16 @@ func main() {
 
 	log.Printf(">>> Starting server on port %d...\n", port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
+
+}
+
+func methodHandler(method string, handler http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != method {
+			http.Error(w, fmt.Sprintf("Method not allowed. Method: %s Path: %s", r.Method, r.URL.Path), http.StatusMethodNotAllowed)
+			return
+		}
+		handler(w, r)
+	}
 
 }

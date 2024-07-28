@@ -1,0 +1,239 @@
+definitions:
+  main.CreatePostRequestBody:
+    properties:
+      content:
+        type: string
+    type: object
+  main.Credentials:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  main.CreteProfileRequestBody:
+    properties:
+      avatar:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+    type: object
+  main.Notification:
+    properties:
+      id:
+        type: string
+      likedBy:
+        type: string
+      postId:
+        type: string
+      type:
+        type: string
+    type: object
+  main.Post:
+    properties:
+      author:
+        type: string
+      content:
+        type: string
+      id:
+        type: string
+      likesCount:
+        type: integer
+    type: object
+  main.UpdateProfileRequestBody:
+    properties:
+      avatar:
+        type: string
+      name:
+        type: string
+    type: object
+  main.User:
+    properties:
+      avatar:
+        type: string
+      id:
+        type: string
+      likedPosts:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      notifications:
+        items:
+          type: string
+        type: array
+      password:
+        type: string
+      posts:
+        items:
+          type: string
+        type: array
+    type: object
+info:
+  contact: {}
+  title: API of social-network test project
+  version: "1.0"
+paths:
+  /notifications:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/main.Notification'
+            type: array
+      summary: Get notifications
+      tags:
+      - notifications
+  /posts:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/main.Post'
+            type: array
+      summary: Get my posts
+      tags:
+      - posts
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Create post data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/main.CreatePostRequestBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.Post'
+      summary: Create post
+      tags:
+      - posts
+  /posts/{id}/like:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID of post to like
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.Post'
+      summary: Like post
+      tags:
+      - posts
+  /posts/liked:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/main.Post'
+            type: array
+      summary: Get posts that I've liked
+      tags:
+      - posts
+  /profile:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.User'
+      summary: Get my profile
+      tags:
+      - profile
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Update profile data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/main.UpdateProfileRequestBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.User'
+      summary: Update my profile
+      tags:
+      - profile
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Create profile data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/main.CreteProfileRequestBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.User'
+      summary: Create profile
+      tags:
+      - profile
+  /sign-in:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Sign in credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/main.Credentials'
+      produces:
+      - application/json
+      responses: {}
+      summary: Sign in
+      tags:
+      - auth
+swagger: "2.0"
